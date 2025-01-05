@@ -1,0 +1,50 @@
+from google.colab import drive
+import datetime
+import os
+
+# Gドライブ接続
+drive.mount('/content/drive')
+
+# 参照フォルダーを変数で設定
+work_dir = '/content/drive/My Drive/Colab Notebooks/txt2srt'
+output_dir = f'{work_dir}/output'
+
+def convert_to_srt(input_file, seconds_per_char=0.1):
+    with open(input_file, 'r', encoding='utf-8') as file:
+        lines = file.readlines()
+
+    srt_content = ''
+    index = 1
+    start_time = datetime.datetime(1, 1, 1, 0, 0, 0, 0)
+
+    for line in lines:
+        text = line.strip()
+        duration_seconds = len(text) * seconds_per_char
+        delta = datetime.timedelta(seconds=duration_seconds)
+        end_time = start_time + delta
+
+        srt_content += f'{index}\n'
+        srt_content += f'{start_time.strftime("%H:%M:%S,%f")[:-3]} --> {end_time.strftime("%H:%M:%S,%f")[:-3]}\n'
+        srt_content += f'{text}\n\n'
+
+        start_time = end_time
+        index += 1
+
+    # Extract the file name from input_file and add timestamp
+    base_name = os.path.basename(input_file)
+    file_name, file_ext = os.path.splitext(base_name)
+    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    output_file_name = f'{file_name}_{timestamp}.srt'
+
+    with open(f'{output_dir}/{output_file_name}', 'w', encoding='utf-8') as file:
+        file.write(srt_content)
+
+    return output_file_name
+
+# 使用例
+input_file = f'{work_dir}/data/text.txt'
+seconds_per_char = 0.1  # 1文字あたりの秒数を設定
+
+output_file = convert_to_srt(input_file, seconds_per_char)
+
+print(f'変換が完了しました。SRTファイルは {output_dir}/{output_file} として保存されました。')
